@@ -39,6 +39,8 @@ let initialClientY: number = -1;
 let previousBodyOverflowSetting;
 let previousBodyPaddingRight;
 
+let bodyElementLockListeners: Array<{ onLock: () => void, onUnlock: () => void }> = [];
+
 // returns true if `el` should be allowed to receive touchmove events
 const allowTouchMove = (el: EventTarget): boolean =>
   locks.some(lock => {
@@ -94,6 +96,10 @@ const setOverflowHidden = (options?: BodyScrollOptions) => {
     if (previousBodyOverflowSetting === undefined) {
       previousBodyOverflowSetting = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
+
+      bodyElementLockListeners.forEach(({ onLock }) => {
+        onLock();
+      });
     }
   });
 };
@@ -116,6 +122,10 @@ const restoreOverflowSetting = () => {
       // Restore previousBodyOverflowSetting to undefined
       // so setOverflowHidden knows it can be set again.
       previousBodyOverflowSetting = undefined;
+
+      bodyElementLockListeners.forEach(({ onUnlock }) => {
+        onUnlock();
+      });
     }
   });
 };
@@ -274,4 +284,14 @@ export const enableBodyScroll = (targetElement: any): void => {
   } else {
     locks = locks.filter(lock => lock.targetElement !== targetElement);
   }
+};
+
+export const addBodyElementLockListener = (onLock: () => void, onUnlock: () => void): void => {
+  bodyElementLockListeners = [...bodyElementLockListeners, { onLock, onUnlock }];
+};
+
+export const removeBodyElementLockListener = (onLock: () => void, onUnlock: () => void): void => {
+  bodyElementLockListeners = bodyElementLockListeners.filter(
+    listener => onLock !== listener.onLock && onUnlock !== listener.onUnlock
+  );
 };
