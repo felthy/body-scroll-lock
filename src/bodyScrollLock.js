@@ -5,6 +5,7 @@
 export interface BodyScrollOptions {
   reserveScrollBarGap?: boolean;
   allowTouchMove?: (el: any) => boolean;
+  allowOverscroll?: boolean;
 }
 
 interface Lock {
@@ -41,12 +42,16 @@ let previousBodyPaddingRight;
 // returns true if `el` should be allowed to receive touchmove events
 const allowTouchMove = (el: EventTarget): boolean =>
   locks.some(lock => {
-    if (lock.options.allowTouchMove && lock.options.allowTouchMove(el)) {
+    if (lock.options.allowOverscroll || (lock.options.allowTouchMove && lock.options.allowTouchMove(el))) {
       return true;
     }
 
     return false;
   });
+
+// returns true if `el` is configured to allow overscroll behaviour
+const allowOverscroll = (el: EventTarget): boolean =>
+  locks.some(lock => lock.targetElement === el && lock.options.allowOverscroll);
 
 const preventDefault = (rawEvent: HandleScrollEvent): boolean => {
   const e = rawEvent || window.event;
@@ -113,8 +118,40 @@ const restoreOverflowSetting = () => {
 };
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollHeight#Problems_and_solutions
-const isTargetElementTotallyScrolled = (targetElement: any): boolean =>
-  targetElement ? targetElement.scrollHeight - targetElement.scrollTop <= targetElement.clientHeight : false;
+const isTargetElementTotallyScrolled = (targetElement: any): boolean => {
+  if (!targetElement) {
+    return false;
+  }
+  let innerHeight = targetElement.clientHeight;
+  const computedStyle = window.getComputedStyle(targetElement);
+
+  innerHeight -= parseFloat(computedStyle.paddingTop) + parseFloat(computedStyle.paddingBottom);
+  return targetElement.scrollHeight - targetElement.scrollTop <= innerHeight;
+};
+
+const handleStartScroll = (event: HandleScrollEvent, targetElement: any): boolean => {
+  initialClientY = event.targetTouches[0].clientY;
+
+  if (!allowOverscroll(targetElement)) {
+    return false;
+  }
+
+  // If we're at the top or the bottom of the container’s scroll, push up or down one pixel.
+  // This prevents the scroll from “passing through” to the body.
+  if (targetElement && targetElement.scrollTop === 0) {
+    // element is at the top of its scroll
+    targetElement.scrollTop = 1;
+    return false;
+  }
+
+  if (isTargetElementTotallyScrolled(targetElement)) {
+    // element is at the bottom of its scroll
+    targetElement.scrollTop -= 1;
+    return false;
+  }
+
+  return true;
+};
 
 const handleScroll = (event: HandleScrollEvent, targetElement: any): boolean => {
   const clientY = event.targetTouches[0].clientY - initialClientY;
@@ -160,7 +197,7 @@ export const disableBodyScroll = (targetElement: any, options?: BodyScrollOption
       targetElement.ontouchstart = (event: HandleScrollEvent) => {
         if (event.targetTouches.length === 1) {
           // detect single touch
-          initialClientY = event.targetTouches[0].clientY;
+          handleStartScroll(event, targetElement);
         }
       };
       targetElement.ontouchmove = (event: HandleScrollEvent) => {
