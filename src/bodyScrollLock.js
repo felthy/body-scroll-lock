@@ -41,7 +41,7 @@ let previousBodyPaddingRight;
 
 let bodyElementLockListeners: Array<{ onLock: () => void, onUnlock: () => void }> = [];
 
-// returns true if `el` should be allowed to receive touchmove events
+// returns true if `el` should be allowed to receive touchmove events.
 const allowTouchMove = (el: EventTarget): boolean =>
   locks.some(lock => {
     if (
@@ -69,7 +69,7 @@ const preventDefault = (rawEvent: HandleScrollEvent): boolean => {
     return true;
   }
 
-  // Do not prevent if the event has more than one touch (usually meaning this is a multi touch gesture like pinch to zoom)
+  // Do not prevent if the event has more than one touch (usually meaning this is a multi touch gesture like pinch to zoom).
   if (e.touches.length > 1) return true;
 
   if (e.preventDefault) e.preventDefault();
@@ -172,12 +172,12 @@ const handleScroll = (event: HandleScrollEvent, targetElement: any): boolean => 
   }
 
   if (targetElement && targetElement.scrollTop === 0 && clientY > 0) {
-    // element is at the top of its scroll
+    // element is at the top of its scroll.
     return preventDefault(event);
   }
 
   if (isTargetElementTotallyScrolled(targetElement) && clientY < 0) {
-    // element is at the top of its scroll
+    // element is at the top of its scroll.
     return preventDefault(event);
   }
 
@@ -207,13 +207,13 @@ export const disableBodyScroll = (targetElement: any, options?: BodyScrollOption
 
       targetElement.ontouchstart = (event: HandleScrollEvent) => {
         if (event.targetTouches.length === 1) {
-          // detect single touch
+          // detect single touch.
           handleStartScroll(event, targetElement);
         }
       };
       targetElement.ontouchmove = (event: HandleScrollEvent) => {
         if (event.targetTouches.length === 1) {
-          // detect single touch
+          // detect single touch.
           handleScroll(event, targetElement);
         }
       };
@@ -236,7 +236,7 @@ export const disableBodyScroll = (targetElement: any, options?: BodyScrollOption
 
 export const clearAllBodyScrollLocks = (): void => {
   if (isIosDevice) {
-    // Clear all locks ontouchstart/ontouchmove handlers, and the references
+    // Clear all locks ontouchstart/ontouchmove handlers, and the references.
     locks.forEach((lock: Lock) => {
       lock.targetElement.ontouchstart = null;
       lock.targetElement.ontouchmove = null;
@@ -249,7 +249,7 @@ export const clearAllBodyScrollLocks = (): void => {
 
     locks = [];
 
-    // Reset initial clientY
+    // Reset initial clientY.
     initialClientY = -1;
   } else {
     restoreOverflowSetting();
@@ -277,12 +277,11 @@ export const enableBodyScroll = (targetElement: any): void => {
 
       documentListenerAdded = false;
     }
-  } else if (locks.length === 1 && locks[0].targetElement === targetElement) {
-    restoreOverflowSetting();
-
-    locks = [];
   } else {
     locks = locks.filter(lock => lock.targetElement !== targetElement);
+    if (!locks.length) {
+      restoreOverflowSetting();
+    }
   }
 };
 
