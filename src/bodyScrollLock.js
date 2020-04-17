@@ -30,7 +30,8 @@ const isIosDevice =
   typeof window !== 'undefined' &&
   window.navigator &&
   window.navigator.platform &&
-  /iP(ad|hone|od)/.test(window.navigator.platform);
+  (/iP(ad|hone|od)/.test(window.navigator.platform) ||
+    (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1));
 type HandleScrollEvent = TouchEvent;
 
 let locks: Array<Lock> = [];
@@ -177,7 +178,7 @@ const handleScroll = (event: HandleScrollEvent, targetElement: any): boolean => 
   }
 
   if (isTargetElementTotallyScrolled(targetElement) && clientY < 0) {
-    // element is at the top of its scroll.
+    // element is at the bottom of its scroll.
     return preventDefault(event);
   }
 

@@ -1,3 +1,37 @@
+(function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
+const bodyScrollLock = require('../../lib/bodyScrollLock.js');
+
+const disableBodyScrollButton = document.querySelector('.disableBodyScroll');
+const enableBodyScrollButton = document.querySelector('.enableBodyScroll');
+const statusElement = document.querySelector('.bodyScrollLockStatus');
+const modalElement = document.querySelector('.modal');
+const scrollTargetElement = document.querySelector('.scrollTarget');
+
+disableBodyScrollButton.onclick = function() {
+  console.info('disableBodyScrollButton');
+
+  // show modal
+  modalElement.classList.add('active');
+
+  bodyScrollLock.disableBodyScroll(scrollTargetElement);
+
+  statusElement.innerHTML = ' &mdash; Scroll Locked';
+  statusElement.style.color = 'red';
+};
+
+enableBodyScrollButton.onclick = function() {
+  console.info('enableBodyScrollButton');
+
+  // hide modal
+  modalElement.classList.remove('active');
+
+  bodyScrollLock.enableBodyScroll(scrollTargetElement);
+
+  statusElement.innerHTML = ' &mdash; Scroll Unlocked';
+  statusElement.style.color = '';
+};
+
+},{"../../lib/bodyScrollLock.js":2}],2:[function(require,module,exports){
 (function (global, factory) {
   if (typeof define === "function" && define.amd) {
     define(['exports'], factory);
@@ -55,23 +89,14 @@
   var previousBodyOverflowSetting = void 0;
   var previousBodyPaddingRight = void 0;
 
-  var bodyElementLockListeners = [];
-
   // returns true if `el` should be allowed to receive touchmove events.
   var allowTouchMove = function allowTouchMove(el) {
     return locks.some(function (lock) {
-      if (lock.targetElement === el && lock.options.allowOverscroll || lock.options.allowTouchMove && lock.options.allowTouchMove(el)) {
+      if (lock.options.allowTouchMove && lock.options.allowTouchMove(el)) {
         return true;
       }
 
       return false;
-    });
-  };
-
-  // returns true if `el` is configured to allow overscroll behaviour
-  var allowOverscroll = function allowOverscroll(el) {
-    return locks.some(function (lock) {
-      return lock.targetElement === el && lock.options.allowOverscroll;
     });
   };
 
@@ -113,12 +138,6 @@
       if (previousBodyOverflowSetting === undefined) {
         previousBodyOverflowSetting = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
-
-        bodyElementLockListeners.forEach(function (_ref) {
-          var onLock = _ref.onLock;
-
-          onLock();
-        });
       }
     });
   };
@@ -141,48 +160,13 @@
         // Restore previousBodyOverflowSetting to undefined
         // so setOverflowHidden knows it can be set again.
         previousBodyOverflowSetting = undefined;
-
-        bodyElementLockListeners.forEach(function (_ref2) {
-          var onUnlock = _ref2.onUnlock;
-
-          onUnlock();
-        });
       }
     });
   };
 
   // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollHeight#Problems_and_solutions
   var isTargetElementTotallyScrolled = function isTargetElementTotallyScrolled(targetElement) {
-    if (!targetElement) {
-      return false;
-    }
-    var innerHeight = targetElement.clientHeight;
-    var computedStyle = window.getComputedStyle(targetElement);
-
-    innerHeight -= parseFloat(computedStyle.paddingTop) + parseFloat(computedStyle.paddingBottom);
-    return targetElement.scrollHeight - targetElement.scrollTop <= innerHeight;
-  };
-
-  var handleStartScroll = function handleStartScroll(event, targetElement) {
-    initialClientY = event.targetTouches[0].clientY;
-
-    if (!allowOverscroll(targetElement)) {
-      return false;
-    }
-
-    // If we're at the top or the bottom of the container’s scroll, push up or down one pixel.
-    // This prevents the scroll from “passing through” to the body.
-    if (targetElement && targetElement.scrollTop === 0) {
-      // element is at the top of its scroll
-      targetElement.scrollTop = 1;
-    }
-
-    if (isTargetElementTotallyScrolled(targetElement)) {
-      // element is at the bottom of its scroll
-      targetElement.scrollTop -= 1;
-    }
-
-    return true;
+    return targetElement ? targetElement.scrollHeight - targetElement.scrollTop <= targetElement.clientHeight : false;
   };
 
   var handleScroll = function handleScroll(event, targetElement) {
@@ -198,7 +182,7 @@
     }
 
     if (isTargetElementTotallyScrolled(targetElement) && clientY < 0) {
-      // element is at the bottom of its scroll.
+      // element is at the top of its scroll.
       return preventDefault(event);
     }
 
@@ -229,7 +213,7 @@
         targetElement.ontouchstart = function (event) {
           if (event.targetTouches.length === 1) {
             // detect single touch.
-            handleStartScroll(event, targetElement);
+            initialClientY = event.targetTouches[0].clientY;
           }
         };
         targetElement.ontouchmove = function (event) {
@@ -307,15 +291,7 @@
       }
     }
   };
-
-  var addBodyElementLockListener = exports.addBodyElementLockListener = function addBodyElementLockListener(onLock, onUnlock) {
-    bodyElementLockListeners = [].concat(_toConsumableArray(bodyElementLockListeners), [{ onLock: onLock, onUnlock: onUnlock }]);
-  };
-
-  var removeBodyElementLockListener = exports.removeBodyElementLockListener = function removeBodyElementLockListener(onLock, onUnlock) {
-    bodyElementLockListeners = bodyElementLockListeners.filter(function (listener) {
-      return onLock !== listener.onLock && onUnlock !== listener.onUnlock;
-    });
-  };
 });
 
+
+},{}]},{},[1]);
