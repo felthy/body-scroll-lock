@@ -132,16 +132,8 @@ const restoreOverflowSetting = () => {
 };
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollHeight#Problems_and_solutions
-const isTargetElementTotallyScrolled = (targetElement: any): boolean => {
-  if (!targetElement) {
-    return false;
-  }
-  let innerHeight = targetElement.clientHeight;
-  const computedStyle = window.getComputedStyle(targetElement);
-
-  innerHeight -= parseFloat(computedStyle.paddingTop) + parseFloat(computedStyle.paddingBottom);
-  return targetElement.scrollHeight - targetElement.scrollTop <= innerHeight;
-};
+const isTargetElementTotallyScrolled = (targetElement: any): boolean =>
+  targetElement ? targetElement.scrollHeight - targetElement.scrollTop <= targetElement.clientHeight : false;
 
 const handleStartScroll = (event: HandleScrollEvent, targetElement: any): boolean => {
   initialClientY = event.targetTouches[0].clientY;
